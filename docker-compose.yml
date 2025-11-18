@@ -22,7 +22,7 @@ services:
     build: .
     container_name: micboard-app
     ports:
-      - "${PORT}:${PORT}"
+      - "5001:${PORT}"
     depends_on:
       postgres:
         condition: service_healthy

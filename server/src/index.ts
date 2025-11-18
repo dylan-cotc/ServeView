@@ -42,10 +42,6 @@ app.use('/api/admin', authenticateToken, adminRoutes);
 // Serve client static files
 app.use(express.static(path.join(__dirname, '..', 'client')));
 
-// Catch all handler: send back index.html for client-side routing
-app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, '..', 'client', 'index.html'));
-});
 
 app.listen(PORT, () => {
   console.log(`🚀 Micboard server running on port ${PORT}`);

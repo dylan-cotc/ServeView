@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Secrets file location (in the uploads volume)
 SECRETS_FILE="/app/uploads/.secrets"
