@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { adminAPI } from '../services/api';
 import type { Location } from '../types';
 
@@ -24,17 +25,17 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
       // If no location is selected, select the primary location or the first one
       if (!selectedLocation && data.length > 0) {
-        const primary = data.find(l => l.is_primary) || data[0];
+        const primary = data.find((l: Location) => l.is_primary) || data[0];
         setSelectedLocationState(primary);
         localStorage.setItem('selectedLocationId', primary.id.toString());
       } else if (selectedLocation) {
         // Update the selected location with fresh data
-        const updated = data.find(l => l.id === selectedLocation.id);
+        const updated = data.find((l: Location) => l.id === selectedLocation.id);
         if (updated) {
           setSelectedLocationState(updated);
         } else if (data.length > 0) {
           // Selected location was deleted, switch to primary or first
-          const primary = data.find(l => l.is_primary) || data[0];
+          const primary = data.find((l: Location) => l.is_primary) || data[0];
           setSelectedLocationState(primary);
           localStorage.setItem('selectedLocationId', primary.id.toString());
         }

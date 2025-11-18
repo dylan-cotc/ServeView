@@ -1,5 +1,6 @@
-import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
-import { Save, AlertCircle, CheckCircle, Upload, Trash2, Image, Moon, Sun } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import type { FormEvent, ChangeEvent } from 'react';
+import { Save, AlertCircle, CheckCircle, Upload, Trash2, Moon, Sun } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { useLocation } from '../../contexts/LocationContext';
 import type { Settings as SettingsType } from '../../types';
@@ -64,7 +65,7 @@ export default function Settings() {
     setMessage(null);
 
     try {
-      await adminAPI.updateSettings(selectedLocation.id, settings);
+      await adminAPI.updateSettings(selectedLocation.id, settings as unknown as Record<string, string>);
       setMessage({ type: 'success', text: 'Settings saved successfully!' });
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to save settings' });

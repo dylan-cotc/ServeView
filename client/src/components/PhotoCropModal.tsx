@@ -23,7 +23,7 @@ export default function PhotoCropModal({ imageUrl, onCropComplete, onClose }: Ph
   };
 
   const onCropCompleteCallback = useCallback(
-    (croppedArea: Area, croppedAreaPixels: Area) => {
+    (_croppedArea: Area, croppedAreaPixels: Area) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
     []

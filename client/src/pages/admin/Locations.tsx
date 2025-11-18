@@ -77,7 +77,7 @@ export default function Locations() {
       // If a service type was selected, update it
       if (formData.serviceTypeId) {
         const locations = await adminAPI.getLocations();
-        const newLocation = locations.find(l => l.slug === formData.slug);
+        const newLocation = locations.find((l: Location) => l.slug === formData.slug);
         if (newLocation) {
           await adminAPI.updateLocation(
             newLocation.id,

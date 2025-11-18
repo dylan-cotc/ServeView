@@ -92,7 +92,7 @@ export default function People() {
     reader.readAsDataURL(file);
   };
 
-  const handleCropComplete = async (croppedAreaPixels: Area, zoom: number) => {
+  const handleCropComplete = async (croppedAreaPixels: Area, _zoom: number) => {
     if (!selectedFile || !selectedPersonId || !imagePreviewUrl) return;
 
     setUploadingId(selectedPersonId);
