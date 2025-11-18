@@ -19,7 +19,7 @@ create_admin() {
 
     # Generate password hash for 'admin' (bcrypt hash for 'admin')
     # This is a pre-computed hash for the password 'admin'
-    ADMIN_PASSWORD_HASH='$2b$10$8K1p8Z9X8Y7W6V5U4T3S2R1Q0P9O8N7M6L5K4J3I2H1G0F9E8D7C6'
+    ADMIN_PASSWORD_HASH='$2b$10$kQDgAXkwxZWciL3QfVbNSe3BV3IA55swGmRNdDNtKTeGLCBfmWhTi'
 
     # Insert admin user using psql
     if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d micboard -c "
