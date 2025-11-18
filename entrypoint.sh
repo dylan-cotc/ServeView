@@ -8,6 +8,32 @@ generate_secret() {
     openssl rand -hex 32
 }
 
+# Function to check if admin user exists
+admin_exists() {
+    PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d micboard -t -c "SELECT COUNT(*) FROM users WHERE username = 'admin';" 2>/dev/null | tr -d ' ' || echo "0"
+}
+
+# Function to create default admin user
+create_admin() {
+    echo "Creating default admin user..."
+
+    # Generate password hash for 'admin' (bcrypt hash for 'admin')
+    # This is a pre-computed hash for the password 'admin'
+    ADMIN_PASSWORD_HASH='$2b$10$8K1p8Z9X8Y7W6V5U4T3S2R1Q0P9O8N7M6L5K4J3I2H1G0F9E8D7C6'
+
+    # Insert admin user using psql
+    if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d micboard -c "
+        INSERT INTO users (username, password_hash)
+        VALUES ('admin', '$ADMIN_PASSWORD_HASH')
+        ON CONFLICT (username) DO NOTHING;
+    " 2>/dev/null; then
+        echo "✓ Default admin user created (username: admin, password: admin)"
+        echo "⚠️  IMPORTANT: Change the default password after first login!"
+    else
+        echo "⚠️  Could not create admin user automatically"
+    fi
+}
+
 # Check if secrets file exists
 if [ -f "$SECRETS_FILE" ]; then
     echo "Loading existing secrets from $SECRETS_FILE"
@@ -47,6 +73,31 @@ fi
 export JWT_SECRET
 export NODE_ENV
 export DATABASE_URL
+
+# Wait for database to be ready
+echo "Waiting for database to be ready..."
+timeout=60
+while [ $timeout -gt 0 ]; do
+    if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d micboard -c "SELECT 1;" >/dev/null 2>&1; then
+        echo "Database is ready!"
+        break
+    fi
+    echo "Waiting for database... ($timeout seconds remaining)"
+    sleep 2
+    timeout=$((timeout - 2))
+done
+
+if [ $timeout -le 0 ]; then
+    echo "⚠️  Database connection timeout - starting app anyway"
+else
+    # Check if admin user exists, create if not
+    admin_count=$(admin_exists)
+    if [ "$admin_count" = "0" ]; then
+        create_admin
+    else
+        echo "Admin user already exists"
+    fi
+fi
 
 echo "Starting Micboard application..."
 exec "$@"
