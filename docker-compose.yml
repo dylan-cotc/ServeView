@@ -31,7 +31,6 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/micboard
       - JWT_SECRET=${JWT_SECRET}
-      - CORS_ORIGIN=${CORS_ORIGIN}
       - PORT=${PORT}
       - UPLOAD_DIR=${UPLOAD_DIR}
       - NODE_ENV=${NODE_ENV}
