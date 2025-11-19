@@ -240,6 +240,10 @@ export const adminAPI = {
     const response = await api.put(`/admin/users/${userId}`, userData);
     return response.data;
   },
+  resetUserPassword: async (userId: number, newPassword: string) => {
+    const response = await api.put(`/admin/users/${userId}/password`, { newPassword });
+    return response.data;
+  },
   deleteUser: async (userId: number) => {
     const response = await api.delete(`/admin/users/${userId}`);
     return response.data;

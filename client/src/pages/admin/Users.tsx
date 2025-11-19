@@ -22,6 +22,10 @@ export default function Users() {
     password: '',
     role: 'editor' as 'admin' | 'editor'
   });
+  const [resetPasswordData, setResetPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -40,6 +44,7 @@ export default function Users() {
 
   const resetForm = () => {
     setFormData({ username: '', password: '', role: 'editor' });
+    setResetPasswordData({ newPassword: '', confirmPassword: '' });
     setEditingUser(null);
     setShowCreateForm(false);
   };
@@ -89,6 +94,32 @@ export default function Users() {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
+      setMessage({ type: 'error', text: 'Passwords do not match' });
+      return;
+    }
+
+    if (resetPasswordData.newPassword.length < 6) {
+      setMessage({ type: 'error', text: 'Password must be at least 6 characters long' });
+      return;
+    }
+
+    setMessage(null);
+
+    try {
+      await adminAPI.resetUserPassword(editingUser.id, resetPasswordData.newPassword);
+      setMessage({ type: 'success', text: 'Password reset successfully!' });
+      setResetPasswordData({ newPassword: '', confirmPassword: '' });
+      fetchUsers(); // Refresh to update first_login status
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to reset password' });
+    }
+  };
+
   const startEdit = (user: User) => {
     setEditingUser(user);
     setFormData({
@@ -96,6 +127,7 @@ export default function Users() {
       password: '',
       role: user.role
     });
+    setResetPasswordData({ newPassword: '', confirmPassword: '' });
     setShowCreateForm(true);
   };
 
@@ -196,6 +228,51 @@ export default function Users() {
                   <option value="admin">Admin</option>
                 </select>
               </div>
+
+              {/* Password Reset Section - Only for editing existing users */}
+              {editingUser && (
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Reset Password</h3>
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div>
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        id="newPassword"
+                        value={resetPasswordData.newPassword}
+                        onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="Enter new password"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm New Password
+                      </label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        value={resetPasswordData.confirmPassword}
+                        onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="Confirm new password"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    >
+                      Reset Password
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 mt-6">
