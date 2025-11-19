@@ -89,11 +89,18 @@ export DATABASE_URL
 echo "Waiting for database to be ready..."
 timeout=60
 while [ $timeout -gt 0 ]; do
-    if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d micboard -c "SELECT 1;" >/dev/null 2>&1; then
-        echo "Database is ready!"
-        break
+    # First check if PostgreSQL is accepting connections
+    if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
+        # Then check if our specific database exists and is accessible
+        if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d micboard -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "Database is ready!"
+            break
+        else
+            echo "PostgreSQL ready, waiting for micboard database..."
+        fi
+    else
+        echo "Waiting for PostgreSQL... ($timeout seconds remaining)"
     fi
-    echo "Waiting for database... ($timeout seconds remaining)"
     sleep 2
     timeout=$((timeout - 2))
 done
