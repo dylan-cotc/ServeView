@@ -4,6 +4,7 @@ import AdminLayout from './components/AdminLayout';
 import Display from './pages/Display';
 import Login from './pages/Login';
 import Dashboard from './pages/admin/Dashboard';
+import Users from './pages/admin/Users';
 import Settings from './pages/admin/Settings';
 import Positions from './pages/admin/Positions';
 import People from './pages/admin/People';
@@ -30,6 +31,7 @@ export default function App() {
           }
         >
           <Route index element={<Dashboard />} />
+          <Route path="users" element={<Users />} />
           <Route path="settings" element={<Settings />} />
           <Route path="positions" element={<Positions />} />
           <Route path="people" element={<People />} />

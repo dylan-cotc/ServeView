@@ -226,6 +226,24 @@ export const adminAPI = {
     const response = await api.delete('/admin/logo');
     return response.data;
   },
+
+  // Users
+  getUsers: async () => {
+    const response = await api.get('/admin/users');
+    return response.data;
+  },
+  createUser: async (userData: { username: string; password: string; role: 'admin' | 'editor' }) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  },
+  updateUser: async (userId: number, userData: { username: string; role: 'admin' | 'editor' }) => {
+    const response = await api.put(`/admin/users/${userId}`, userData);
+    return response.data;
+  },
+  deleteUser: async (userId: number) => {
+    const response = await api.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
 };
 
 export default api;
