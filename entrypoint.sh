@@ -48,7 +48,7 @@ create_admin() {
 # Check if secrets file exists
 if [ -f "$SECRETS_FILE" ]; then
     echo "Loading existing secrets from $SECRETS_FILE"
-    source "$SECRETS_FILE"
+    . "$SECRETS_FILE"
 else
     echo "Generating new secrets..."
 
@@ -87,19 +87,30 @@ export DATABASE_URL
 
 # Wait for database to be ready
 echo "Waiting for database to be ready..."
+echo "Environment variables:"
+echo "  POSTGRES_USER: '$POSTGRES_USER'"
+echo "  POSTGRES_PASSWORD: '[SET]'"
+echo "  DATABASE_URL: '$DATABASE_URL'"
+echo "Testing connection to postgres:5432 with user $POSTGRES_USER"
 timeout=60
 while [ $timeout -gt 0 ]; do
+    echo "Attempting database connection... ($timeout seconds remaining)"
     # First check if PostgreSQL is accepting connections
     if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
+        echo "✓ PostgreSQL is accepting connections"
         # Then check if our specific database exists and is accessible
         if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d micboard -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✓ Database 'micboard' is accessible"
             echo "Database is ready!"
             break
         else
-            echo "PostgreSQL ready, waiting for micboard database..."
+            echo "⚠️  PostgreSQL ready, but 'micboard' database not accessible yet..."
+            # Try to create the database if it doesn't exist
+            echo "Attempting to create 'micboard' database..."
+            PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE micboard;" 2>/dev/null && echo "✓ Created micboard database" || echo "Database might already exist or creation failed"
         fi
     else
-        echo "Waiting for PostgreSQL... ($timeout seconds remaining)"
+        echo "⚠️  PostgreSQL not ready yet... ($timeout seconds remaining)"
     fi
     sleep 2
     timeout=$((timeout - 2))

@@ -50,7 +50,7 @@ export default function Settings() {
       setLogoDisplayMode(data.logo_display_mode || 'both');
       setDarkMode(data.dark_mode !== undefined ? data.dark_mode : true);
       if (data.logo_path) {
-        setLogoPreview(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/../${data.logo_path}`);
+        setLogoPreview(`${import.meta.env.VITE_API_URL || '/api'}/../${data.logo_path}`);
       }
     } catch (error) {
       console.error('Failed to load display settings:', error);
@@ -88,7 +88,7 @@ export default function Settings() {
     try {
       const response = await adminAPI.uploadLogo(file);
       setLogoPath(response.logo_path);
-      setLogoPreview(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/../${response.logo_path}`);
+      setLogoPreview(`${import.meta.env.VITE_API_URL || '/api'}/../${response.logo_path}`);
       setMessage({ type: 'success', text: 'Logo uploaded successfully!' });
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to upload logo' });

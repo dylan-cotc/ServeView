@@ -7,7 +7,7 @@ import PhotoCropModal from '../../components/PhotoCropModal';
 import type { Area } from 'react-easy-crop';
 import { getCroppedImg } from '../../utils/cropImage';
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace(/\/api$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/api$/, '');
 
 export default function People() {
   const { selectedLocation } = useLocation();

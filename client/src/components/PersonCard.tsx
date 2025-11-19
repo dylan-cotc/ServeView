@@ -24,7 +24,7 @@ export default function PersonCard({ person }: PersonCardProps) {
       <div className="flex-1 relative overflow-hidden bg-gray-200">
         {person.photo_path ? (
           <img
-            src={`http://localhost:3001/${person.photo_path}`}
+            src={`/${person.photo_path}`}
             alt={`${person.first_name} ${person.last_name}`}
             className="absolute inset-0 w-full h-full object-cover"
             style={{

@@ -74,7 +74,7 @@ export default function Display() {
     });
   };
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
   const logoUrl = data.logo?.path ? `${API_BASE_URL}/../${data.logo.path}` : null;
 
   // Color schemes based on dark mode

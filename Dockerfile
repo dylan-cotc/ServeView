@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -23,9 +23,12 @@ COPY server/ ./
 RUN npm run build
 
 # Runtime stage
-FROM node:20-alpine AS runtime
+FROM node:20-slim AS runtime
 
 WORKDIR /app
+
+# Install curl and postgresql-client for health checks and database connectivity
+RUN apt-get update && apt-get install -y curl postgresql-client && rm -rf /var/lib/apt/lists/*
 
 # Copy server build and dependencies
 COPY --from=builder /app/server/dist ./dist
@@ -58,3 +61,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Use entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["npm", "start"]
+
+# Force rebuild marker
+LABEL rebuild="2025-11-19-v3"
