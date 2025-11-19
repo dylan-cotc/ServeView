@@ -96,9 +96,9 @@ export default function Display() {
       <header className={`${headerBg} backdrop-blur-sm shadow-lg px-8 py-6 relative flex items-center`}>
         {/* Logo and/or Church Name */}
         <div className={`flex items-center gap-6 ${
-          data.logo?.display_mode === 'both' && data.logo?.position === 'center' ? 'absolute left-1/2 -translate-x-1/2' : ''
+          (data.logo?.display_mode === 'both' || data.logo?.display_mode === 'logo_only') && data.logo?.position === 'center' ? 'absolute left-1/2 -translate-x-1/2' : ''
         } ${
-          data.logo?.display_mode === 'logo_only' || data.logo?.display_mode === 'church_only' ? 'absolute left-1/2 -translate-x-1/2' : ''
+          data.logo?.display_mode === 'church_only' ? 'absolute left-1/2 -translate-x-1/2' : ''
         }`}>
           {/* Show logo if mode is logo_only or both */}
           {logoUrl && (data.logo?.display_mode === 'logo_only' || data.logo?.display_mode === 'both') && (

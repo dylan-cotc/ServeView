@@ -287,8 +287,8 @@ export default function Settings() {
               </div>
             )}
 
-            {/* Position Selection - only show when both are displayed */}
-            {logoPath && logoDisplayMode === 'both' && (
+            {/* Position Selection - show when both or logo_only are displayed */}
+            {logoPath && (logoDisplayMode === 'both' || logoDisplayMode === 'logo_only') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Position
