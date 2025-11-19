@@ -69,11 +69,10 @@ router.get('/data', async (req: Request, res: Response): Promise<void> => {
       SELECT DISTINCT p.id, p.first_name, p.last_name, p.photo_path, p.photo_position_x, p.photo_position_y, p.photo_zoom, pos.name as position_name,
              MIN(m.display_order) as mic_order
       FROM people p
-      INNER JOIN person_locations pl ON p.id = pl.person_id
       INNER JOIN people_microphones pm ON p.id = pm.person_id
       INNER JOIN microphones m ON pm.microphone_id = m.id AND m.location_id = $1 AND m.is_separator = false
       LEFT JOIN positions pos ON p.position_id = pos.id
-      WHERE pl.location_id = $1
+      WHERE p.location_id = $1
       GROUP BY p.id, p.first_name, p.last_name, p.photo_path, p.photo_position_x, p.photo_position_y, p.photo_zoom, pos.name
       ORDER BY mic_order, pos.name, p.last_name, p.first_name
     `, [locationId]);
