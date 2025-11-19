@@ -1,16 +1,18 @@
 -- Migration 012: Create Users Table with Role-Based Access Control
 -- Adds user management with Admin and Editor roles
 
--- Create table if it doesn't exist
+-- Create table with all required columns
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) CHECK (role IN ('admin', 'editor')),
+    first_login BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Add role column if it doesn't exist (for existing tables)
+-- For existing tables, add missing columns
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS role VARCHAR(20) CHECK (role IN ('admin', 'editor')),
 ADD COLUMN IF NOT EXISTS first_login BOOLEAN DEFAULT true;
