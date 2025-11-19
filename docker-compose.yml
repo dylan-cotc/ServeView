@@ -35,6 +35,12 @@ services:
       - UPLOAD_DIR=${UPLOAD_DIR}
       - NODE_ENV=${NODE_ENV}
     restart: unless-stopped
+    networks:
+      - proxynet
 
 volumes:
   postgres_data:
+
+networks:
+  proxynet:
+    external: true
