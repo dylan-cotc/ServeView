@@ -21,9 +21,9 @@ ADD COLUMN IF NOT EXISTS first_login BOOLEAN DEFAULT true;
 CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 
 -- Insert default admin user (password will be changed on first login)
--- Default password: 'admin123' (hashed) - only if user doesn't exist
+-- Default password: 'admin' (hashed) - only if user doesn't exist
 INSERT INTO users (username, password_hash, role, first_login)
-VALUES ('admin', '$2b$10$rOz8vZxZxZxZxZxZxZxZxOZ8vZxZxZxZxZxZxZxZxZxZxZxZxZx', 'admin', true)
+VALUES ('admin', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', true)
 ON CONFLICT (username) DO NOTHING;
 
 -- Add trigger to update updated_at timestamp
