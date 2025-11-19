@@ -22,7 +22,7 @@ services:
 
   app:
     build: .
-    image: dylan-cotc/micboard:latest
+    image: dylancotc/micboard:latest
     container_name: micboard-app
     ports:
       - "5001:5000"
