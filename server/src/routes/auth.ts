@@ -17,7 +17,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
     // Get user from database
     const result = await pool.query(
-      'SELECT id, username, password_hash FROM users WHERE username = $1',
+      'SELECT id, username, password_hash, role, first_login FROM users WHERE username = $1',
       [username]
     );
 
@@ -40,6 +40,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const token = generateToken({
       userId: user.id,
       username: user.username,
+      role: user.role,
     });
 
     res.json({
@@ -47,6 +48,8 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       user: {
         id: user.id,
         username: user.username,
+        role: user.role,
+        firstLogin: user.first_login,
       },
     });
   } catch (error) {

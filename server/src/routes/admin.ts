@@ -2,16 +2,20 @@ import { Router, Request, Response } from 'express';
 import pool from '../db';
 import planningCenterService from '../services/planningCenter';
 import { upload } from '../middleware/upload';
+import { authenticateToken, requireAdmin, requireEditorOrAdmin } from '../middleware/auth';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 
 const router = Router();
 
+// Apply authentication to all admin routes
+router.use(authenticateToken);
+
 // ========== Settings ==========
 
-// Get all settings
-router.get('/settings', async (req: Request, res: Response): Promise<void> => {
+// Get all settings (Editors and Admins can view)
+router.get('/settings', requireEditorOrAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
     const { location_id } = req.query;
 
@@ -33,8 +37,8 @@ router.get('/settings', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// Update settings
-router.put('/settings', async (req: Request, res: Response): Promise<void> => {
+// Update settings (Editors and Admins can update)
+router.put('/settings', requireEditorOrAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
     const { location_id, settings } = req.body;
 
@@ -436,8 +440,8 @@ router.delete('/people/:id', async (req: Request, res: Response): Promise<void> 
   }
 });
 
-// Get display settings (logo, timezone, dark mode)
-router.get('/display-settings', async (req: Request, res: Response): Promise<void> => {
+// Get display settings (logo, timezone, dark mode) - Admin only
+router.get('/display-settings', requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query(`
       SELECT key, value FROM global_settings WHERE key IN ('logo_path', 'logo_position', 'logo_display_mode', 'timezone', 'dark_mode')
@@ -461,8 +465,8 @@ router.get('/display-settings', async (req: Request, res: Response): Promise<voi
   }
 });
 
-// Get logo settings (backward compatibility)
-router.get('/logo', async (req: Request, res: Response): Promise<void> => {
+// Get logo settings (backward compatibility) - Admin only
+router.get('/logo', requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query(`
       SELECT key, value FROM global_settings WHERE key IN ('logo_path', 'logo_position', 'logo_display_mode')
@@ -484,9 +488,10 @@ router.get('/logo', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// Upload logo
+// Upload logo - Admin only
 router.post(
   '/logo',
+  requireAdmin,
   (req: Request, res: Response, next: any) => {
     upload.single('logo')(req, res, (err: any) => {
       if (err) {
@@ -559,8 +564,8 @@ router.post(
   }
 );
 
-// Update display settings (logo, timezone, dark mode)
-router.put('/display-settings', async (req: Request, res: Response): Promise<void> => {
+// Update display settings (logo, timezone, dark mode) - Admin only
+router.put('/display-settings', requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
     const { position, display_mode, timezone, dark_mode } = req.body;
 
@@ -621,8 +626,8 @@ router.put('/display-settings', async (req: Request, res: Response): Promise<voi
   }
 });
 
-// Update logo settings (position and display mode) - backward compatibility
-router.put('/logo/settings', async (req: Request, res: Response): Promise<void> => {
+// Update logo settings (position and display mode) - backward compatibility - Admin only
+router.put('/logo/settings', requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
     const { position, display_mode } = req.body;
 
@@ -663,8 +668,8 @@ router.put('/logo/settings', async (req: Request, res: Response): Promise<void> 
   }
 });
 
-// Delete logo
-router.delete('/logo', async (req: Request, res: Response): Promise<void> => {
+// Delete logo - Admin only
+router.delete('/logo', requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
     // Get logo path to delete file
     const logoResult = await pool.query(
@@ -1175,6 +1180,165 @@ router.put('/setlist/visibility', async (req: Request, res: Response): Promise<v
   } catch (error) {
     console.error('Update setlist visibility error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ========== User Management ==========
+
+// Get all users (Admin only)
+router.get('/users', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const result = await pool.query(
+      'SELECT id, username, role, first_login, created_at, updated_at FROM users ORDER BY username'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create new user (Admin only)
+router.post('/users', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username, password, role } = req.body;
+
+    if (!username || !password || !role) {
+      res.status(400).json({ error: 'Username, password, and role are required' });
+      return;
+    }
+
+    if (!['admin', 'editor'].includes(role)) {
+      res.status(400).json({ error: 'Role must be either "admin" or "editor"' });
+      return;
+    }
+
+    // Hash the password
+    const { hashPassword } = await import('../utils/password');
+    const passwordHash = await hashPassword(password);
+
+    const result = await pool.query(
+      'INSERT INTO users (username, password_hash, role, first_login) VALUES ($1, $2, $3, false) RETURNING id, username, role, first_login, created_at',
+      [username, passwordHash, role]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Create user error:', error);
+    if (error.code === '23505') { // Unique violation
+      res.status(409).json({ error: 'A user with this username already exists' });
+    } else {
+      res.status(500).json({ error: 'Failed to create user' });
+    }
+  }
+});
+
+// Update user (Admin only)
+router.put('/users/:id', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { username, role } = req.body;
+
+    if (!username || !role) {
+      res.status(400).json({ error: 'Username and role are required' });
+      return;
+    }
+
+    if (!['admin', 'editor'].includes(role)) {
+      res.status(400).json({ error: 'Role must be either "admin" or "editor"' });
+      return;
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET username = $1, role = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, username, role, first_login, created_at, updated_at',
+      [username, role, id]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Update user error:', error);
+    if (error.code === '23505') { // Unique violation
+      res.status(409).json({ error: 'A user with this username already exists' });
+    } else {
+      res.status(500).json({ error: 'Failed to update user' });
+    }
+  }
+});
+
+// Delete user (Admin only)
+router.delete('/users/:id', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Prevent deletion of the last admin user
+    const adminCount = await pool.query('SELECT COUNT(*) as count FROM users WHERE role = $1', ['admin']);
+    const userRole = await pool.query('SELECT role FROM users WHERE id = $1', [id]);
+
+    if (userRole.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    if (userRole.rows[0].role === 'admin' && parseInt(adminCount.rows[0].count) <= 1) {
+      res.status(400).json({ error: 'Cannot delete the last admin user' });
+      return;
+    }
+
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// Change password (for current user or admin changing another user's password)
+router.put('/users/:id/password', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword) {
+      res.status(400).json({ error: 'New password is required' });
+      return;
+    }
+
+    // Get user info
+    const userResult = await pool.query('SELECT password_hash FROM users WHERE id = $1', [id]);
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // If currentPassword is provided, verify it (for regular users changing their own password)
+    if (currentPassword) {
+      const { comparePassword } = await import('../utils/password');
+      const isValid = await comparePassword(currentPassword, userResult.rows[0].password_hash);
+      if (!isValid) {
+        res.status(401).json({ error: 'Current password is incorrect' });
+        return;
+      }
+    }
+
+    // Hash new password
+    const { hashPassword } = await import('../utils/password');
+    const newPasswordHash = await hashPassword(newPassword);
+
+    // Update password and mark as not first login
+    await pool.query(
+      'UPDATE users SET password_hash = $1, first_login = false, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [newPasswordHash, id]
+    );
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to change password' });
   }
 });
 

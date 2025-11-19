@@ -34,6 +34,10 @@ ALTER COLUMN location_id SET NOT NULL;
 ALTER TABLE settings
 DROP CONSTRAINT IF EXISTS settings_key_key;
 
+-- Drop existing composite constraint if it exists (for re-runs)
+ALTER TABLE settings
+DROP CONSTRAINT IF EXISTS settings_key_location_unique;
+
 -- Add composite UNIQUE constraint on (key, location_id)
 ALTER TABLE settings
 ADD CONSTRAINT settings_key_location_unique UNIQUE (key, location_id);
