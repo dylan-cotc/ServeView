@@ -30,7 +30,7 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./server/uploads:/app/uploads
+      - uploads_data:/app/uploads
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/micboard
       - JWT_SECRET=032ed9bcbe8cad582dfb40b18d3dec38a927b0fbee1af489e154892a89d26842
@@ -45,6 +45,7 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
 
 networks:
   proxynet:
