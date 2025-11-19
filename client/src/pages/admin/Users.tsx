@@ -240,51 +240,6 @@ export default function Users() {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-
-              {/* Password Reset Section - Only for editing existing users */}
-              {editingUser && (
-                <div className="border-t pt-4 mt-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Reset Password</h3>
-                  <form onSubmit={handleResetPassword} className="space-y-4">
-                    <div>
-                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                        New Password
-                      </label>
-                      <input
-                        type="password"
-                        id="newPassword"
-                        value={resetPasswordData.newPassword}
-                        onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="Enter new password"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                        Confirm New Password
-                      </label>
-                      <input
-                        type="password"
-                        id="confirmPassword"
-                        value={resetPasswordData.confirmPassword}
-                        onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="Confirm new password"
-                        required
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                    >
-                      Reset Password
-                    </button>
-                  </form>
-                </div>
-              )}
             </div>
 
             <div className="flex gap-3 mt-6">
@@ -303,6 +258,51 @@ export default function Users() {
               </button>
             </div>
           </form>
+
+          {/* Password Reset Section - Separate form outside the main form */}
+          {editingUser && (
+            <div className="border-t pt-4 mt-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Reset Password</h3>
+              <form onSubmit={handleResetPassword} className="max-w-md space-y-4">
+                <div>
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    id="newPassword"
+                    value={resetPasswordData.newPassword}
+                    onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Enter new password"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={resetPasswordData.confirmPassword}
+                    onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Confirm new password"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Reset Password
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
 
