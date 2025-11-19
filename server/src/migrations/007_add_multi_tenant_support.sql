@@ -14,19 +14,14 @@ ALTER TABLE people ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locat
 ALTER TABLE microphones ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locations(id) ON DELETE CASCADE;
 ALTER TABLE service_plans ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locations(id) ON DELETE CASCADE;
 
--- Step 3: Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_positions_location_id ON positions(location_id);
-CREATE INDEX IF NOT EXISTS idx_people_location_id ON people(location_id);
-CREATE INDEX IF NOT EXISTS idx_microphones_location_id ON microphones(location_id);
-CREATE INDEX IF NOT EXISTS idx_service_plans_location_id ON service_plans(location_id);
-CREATE INDEX IF NOT EXISTS idx_locations_slug ON locations(slug);
-CREATE INDEX IF NOT EXISTS idx_locations_is_primary ON locations(is_primary);
+-- Step 3: Create indexes for performance (after data backfill)
+-- Note: Indexes on location_id will be created after data is backfilled to avoid issues with NULL values
 
 -- Step 4: Create a default location for existing data
 -- This handles migration of existing single-tenant data to multi-tenant structure
 INSERT INTO locations (name, slug, is_primary, display_name, sync_enabled)
 VALUES ('Main Campus', 'main', true, 'Main Campus', true)
-ON CONFLICT (pc_location_id) DO NOTHING;
+ON CONFLICT (slug) DO NOTHING;
 
 -- Step 5: Backfill existing data to reference the default location
 -- Only update rows that don't already have a location_id set
@@ -48,3 +43,11 @@ SET
   slug = COALESCE(slug, LOWER(REPLACE(name, ' ', '-'))),
   display_name = COALESCE(display_name, name)
 WHERE slug IS NULL OR display_name IS NULL;
+
+-- Step 8: Create indexes for performance (after data backfill)
+CREATE INDEX IF NOT EXISTS idx_positions_location_id ON positions(location_id);
+CREATE INDEX IF NOT EXISTS idx_people_location_id ON people(location_id);
+CREATE INDEX IF NOT EXISTS idx_microphones_location_id ON microphones(location_id);
+CREATE INDEX IF NOT EXISTS idx_service_plans_location_id ON service_plans(location_id);
+CREATE INDEX IF NOT EXISTS idx_locations_slug ON locations(slug);
+CREATE INDEX IF NOT EXISTS idx_locations_is_primary ON locations(is_primary);
