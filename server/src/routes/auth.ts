@@ -49,7 +49,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         id: user.id,
         username: user.username,
         role: user.role,
-        firstLogin: user.first_login,
+        first_login: user.first_login,
       },
     });
   } catch (error) {

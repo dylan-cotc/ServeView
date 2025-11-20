@@ -2,6 +2,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LocationProvider } from '../contexts/LocationContext';
 import LocationSelector from './LocationSelector';
+import ForcePasswordReset from './ForcePasswordReset';
 import { LayoutDashboard, Settings, Users, UserCircle, Mic, LogOut, ListMusic, MapPin, Shield } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -34,6 +35,9 @@ export default function AdminLayout() {
 
   return (
     <LocationProvider>
+      {/* Force Password Reset Modal - appears over everything */}
+      <ForcePasswordReset />
+      
       <div className="flex h-screen bg-gray-100">
         {/* Sidebar */}
         <div className="w-64 bg-white shadow-lg">
