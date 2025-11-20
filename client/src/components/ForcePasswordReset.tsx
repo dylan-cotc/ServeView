@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Key, AlertCircle, CheckCircle } from 'lucide-react';
+import { Key, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
