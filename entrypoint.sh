@@ -72,7 +72,7 @@ else
 
     # Construct DATABASE_URL if not provided
     if [ -z "$DATABASE_URL" ]; then
-        DATABASE_URL="postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/micboard"
+        DATABASE_URL="postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@localhost:5432/micboard"
     fi
 
     # Save secrets to file
@@ -98,15 +98,15 @@ echo "Environment variables:"
 echo "  POSTGRES_USER: '$POSTGRES_USER'"
 echo "  POSTGRES_PASSWORD: '[SET]'"
 echo "  DATABASE_URL: '$DATABASE_URL'"
-echo "Testing connection to postgres:5432 with user $POSTGRES_USER"
+echo "Testing connection to localhost:5432 with user $POSTGRES_USER"
 timeout=60
 while [ $timeout -gt 0 ]; do
     echo "Attempting database connection... ($timeout seconds remaining)"
     # First check if PostgreSQL is accepting connections
-    if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
+    if PGPASSWORD="$POSTGRES_PASSWORD" psql -h localhost -U "$POSTGRES_USER" -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
         echo "✓ PostgreSQL is accepting connections"
         # Then check if our specific database exists and is accessible
-        if PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d micboard -c "SELECT 1;" >/dev/null 2>&1; then
+        if PGPASSWORD="$POSTGRES_PASSWORD" psql -h localhost -U "$POSTGRES_USER" -d micboard -c "SELECT 1;" >/dev/null 2>&1; then
             echo "✓ Database 'micboard' is accessible"
             echo "Database is ready!"
             break
@@ -114,7 +114,7 @@ while [ $timeout -gt 0 ]; do
             echo "⚠️  PostgreSQL ready, but 'micboard' database not accessible yet..."
             # Try to create the database if it doesn't exist
             echo "Attempting to create 'micboard' database..."
-            PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE micboard;" 2>/dev/null && echo "✓ Created micboard database" || echo "Database might already exist or creation failed"
+            PGPASSWORD="$POSTGRES_PASSWORD" psql -h localhost -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE micboard;" 2>/dev/null && echo "✓ Created micboard database" || echo "Database might already exist or creation failed"
         fi
     else
         echo "⚠️  PostgreSQL not ready yet... ($timeout seconds remaining)"
