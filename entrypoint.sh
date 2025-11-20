@@ -56,6 +56,13 @@ run_migrations() {
 if [ -f "$SECRETS_FILE" ]; then
     echo "Loading existing secrets from $SECRETS_FILE"
     . "$SECRETS_FILE"
+
+    # Always reconstruct DATABASE_URL for embedded PostgreSQL
+    # (in case it was set to postgres service from previous deployment)
+    if command -v pg_ctl >/dev/null 2>&1; then
+        DATABASE_URL="postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@localhost:5432/micboard"
+        echo "Updated DATABASE_URL for embedded PostgreSQL"
+    fi
 else
     echo "Generating new secrets..."
 
