@@ -1,6 +1,5 @@
 services:
   app:
-    build: .
     image: dylancotc/micboard:latest
     container_name: micboard-app
     ports:
