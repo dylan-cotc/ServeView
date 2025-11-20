@@ -12,10 +12,21 @@ generate_secret() {
 start_postgres() {
     echo "Starting PostgreSQL..."
 
+    # Ensure PostgreSQL directories have correct ownership
+    echo "Setting PostgreSQL directory permissions..."
+    chown -R postgres:postgres /var/lib/postgresql/data /var/run/postgresql
+    chmod 700 /var/lib/postgresql/data
+
     # Initialize database if not already done
     if [ ! -d "/var/lib/postgresql/data/base" ]; then
         echo "Initializing PostgreSQL database..."
         sudo -u postgres /usr/lib/postgresql/15/bin/initdb -D /var/lib/postgresql/data
+        
+        # Configure PostgreSQL to listen on all interfaces
+        echo "Configuring PostgreSQL..."
+        echo "listen_addresses = '*'" >> /var/lib/postgresql/data/postgresql.conf
+        echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/data/pg_hba.conf
+        echo "host all all ::0/0 md5" >> /var/lib/postgresql/data/pg_hba.conf
     fi
 
     # Start PostgreSQL
@@ -26,6 +37,19 @@ start_postgres() {
 
     echo "Starting PostgreSQL with $PG_CTL..."
     sudo -u postgres "$PG_CTL" -D /var/lib/postgresql/data -l /var/lib/postgresql/logfile start
+    
+    # Check if start failed and display log
+    if [ $? -ne 0 ]; then
+        echo "❌ PostgreSQL failed to start. Log contents:"
+        if [ -f /var/lib/postgresql/logfile ]; then
+            cat /var/lib/postgresql/logfile
+        else
+            echo "Log file not found at /var/lib/postgresql/logfile"
+        fi
+        echo "Checking data directory contents:"
+        ls -la /var/lib/postgresql/data/
+        return 1
+    fi
 
     # Wait for PostgreSQL to start
     echo "Waiting for PostgreSQL to start..."

@@ -61,7 +61,7 @@ A comprehensive church display management system built with modern web technolog
 
 4. **Default Admin Credentials**
    - **Username**: `admin`
-   - **Password**: `admin`
+   - **Password**: `password`
    - ⚠️ **Change the password immediately after first login!**
 
 ## 🐳 Docker Configuration

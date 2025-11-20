@@ -954,12 +954,15 @@ router.put('/locations/:id', async (req: Request, res: Response): Promise<void> 
            is_primary = COALESCE($4, is_primary),
            pc_service_type_id = $5,
            service_type_name = $6,
-           timezone = COALESCE($7, timezone),
+           timezone = $7,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $8
        RETURNING *`,
-      [name, slug, display_name, is_primary, pc_service_type_id || null, serviceTypeName, timezone, id]
+      [name, slug, display_name, is_primary, pc_service_type_id || null, serviceTypeName, timezone || 'America/New_York', id]
     );
+
+    console.log('Updated location with timezone:', timezone);
+    console.log('Query result:', result.rows[0]);
 
     if (result.rows.length === 0) {
       res.status(404).json({ error: 'Location not found' });
