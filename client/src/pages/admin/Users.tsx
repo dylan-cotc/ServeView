@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, Edit, Trash2, AlertCircle, CheckCircle, Shield, User } from 'lucide-react';
+import { UserPlus, Edit, Trash2, AlertCircle, CheckCircle, Shield, User, X, Key } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 
 interface User {
@@ -20,11 +20,15 @@ export default function Users() {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    role: 'editor' as 'admin' | 'editor'
+    role: 'editor' as 'admin' | 'editor',
+    requirePasswordReset: true
   });
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
   const [resetPasswordData, setResetPasswordData] = useState({
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    requirePasswordReset: true
   });
 
   useEffect(() => {
@@ -43,10 +47,22 @@ export default function Users() {
   };
 
   const resetForm = () => {
-    setFormData({ username: '', password: '', role: 'editor' });
-    setResetPasswordData({ newPassword: '', confirmPassword: '' });
+    setFormData({ username: '', password: '', role: 'editor', requirePasswordReset: true });
+    setResetPasswordData({ newPassword: '', confirmPassword: '', requirePasswordReset: true });
     setEditingUser(null);
     setShowCreateForm(false);
+  };
+
+  const openResetPasswordModal = (user: User) => {
+    setResetPasswordUser(user);
+    setResetPasswordData({ newPassword: '', confirmPassword: '', requirePasswordReset: true });
+    setShowResetPasswordModal(true);
+  };
+
+  const closeResetPasswordModal = () => {
+    setShowResetPasswordModal(false);
+    setResetPasswordUser(null);
+    setResetPasswordData({ newPassword: '', confirmPassword: '', requirePasswordReset: true });
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -96,7 +112,7 @@ export default function Users() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingUser) return;
+    if (!resetPasswordUser) return;
 
     if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
       setMessage({ type: 'error', text: 'Passwords do not match' });
@@ -111,9 +127,13 @@ export default function Users() {
     setMessage(null);
 
     try {
-      await adminAPI.resetUserPassword(editingUser.id, resetPasswordData.newPassword);
+      await adminAPI.resetUserPassword(
+        resetPasswordUser.id,
+        resetPasswordData.newPassword,
+        resetPasswordData.requirePasswordReset
+      );
       setMessage({ type: 'success', text: 'Password reset successfully!' });
-      setResetPasswordData({ newPassword: '', confirmPassword: '' });
+      closeResetPasswordModal();
       fetchUsers(); // Refresh to update first_login status
     } catch (error: any) {
       setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to reset password' });
@@ -125,9 +145,9 @@ export default function Users() {
     setFormData({
       username: user.username,
       password: '',
-      role: user.role
+      role: user.role,
+      requirePasswordReset: true
     });
-    setResetPasswordData({ newPassword: '', confirmPassword: '' });
     setShowCreateForm(true);
   };
 
@@ -228,6 +248,21 @@ export default function Users() {
                   <option value="admin">Admin</option>
                 </select>
               </div>
+
+              {!editingUser && (
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="requirePasswordReset"
+                    checked={formData.requirePasswordReset}
+                    onChange={(e) => setFormData({ ...formData, requirePasswordReset: e.target.checked })}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  />
+                  <label htmlFor="requirePasswordReset" className="ml-2 text-sm text-gray-700">
+                    Require password reset on first login
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 mt-6">
@@ -246,51 +281,90 @@ export default function Users() {
               </button>
             </div>
           </form>
+        </div>
+      )}
 
-          {/* Password Reset Section - Separate form outside the main form */}
-          {editingUser && (
-            <div className="border-t pt-4 mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Reset Password</h3>
-              <form onSubmit={handleResetPassword} className="max-w-md space-y-4">
-                <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    id="newPassword"
-                    value={resetPasswordData.newPassword}
-                    onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Enter new password"
-                    required
-                  />
-                </div>
+      {/* Password Reset Modal */}
+      {showResetPasswordModal && resetPasswordUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Reset Password for {resetPasswordUser.username}
+                </h2>
+              </div>
+              <button
+                onClick={closeResetPasswordModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm New Password
-                  </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    value={resetPasswordData.confirmPassword}
-                    onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Confirm new password"
-                    required
-                  />
-                </div>
+            <form onSubmit={handleResetPassword} className="p-6 space-y-4">
+              <div>
+                <label htmlFor="modalNewPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  id="modalNewPassword"
+                  value={resetPasswordData.newPassword}
+                  onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Enter new password"
+                  required
+                  autoFocus
+                />
+              </div>
 
+              <div>
+                <label htmlFor="modalConfirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  id="modalConfirmPassword"
+                  value={resetPasswordData.confirmPassword}
+                  onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Confirm new password"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="modalRequirePasswordReset"
+                  checked={resetPasswordData.requirePasswordReset}
+                  onChange={(e) => setResetPasswordData({ ...resetPasswordData, requirePasswordReset: e.target.checked })}
+                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                />
+                <label htmlFor="modalRequirePasswordReset" className="ml-2 text-sm text-gray-700">
+                  Require password reset on next login
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors"
                 >
                   Reset Password
                 </button>
-              </form>
-            </div>
-          )}
+                <button
+                  type="button"
+                  onClick={closeResetPasswordModal}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -351,6 +425,13 @@ export default function Users() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => openResetPasswordModal(user)}
+                      className="text-orange-600 hover:text-orange-900 p-1"
+                      title="Reset password"
+                    >
+                      <Key className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => startEdit(user)}
                       className="text-indigo-600 hover:text-indigo-900 p-1"

@@ -232,7 +232,7 @@ export const adminAPI = {
     const response = await api.get('/admin/users');
     return response.data;
   },
-  createUser: async (userData: { username: string; password: string; role: 'admin' | 'editor' }) => {
+  createUser: async (userData: { username: string; password: string; role: 'admin' | 'editor'; requirePasswordReset?: boolean }) => {
     const response = await api.post('/admin/users', userData);
     return response.data;
   },
@@ -240,8 +240,11 @@ export const adminAPI = {
     const response = await api.put(`/admin/users/${userId}`, userData);
     return response.data;
   },
-  resetUserPassword: async (userId: number, newPassword: string) => {
-    const response = await api.put(`/admin/users/${userId}/password`, { newPassword });
+  resetUserPassword: async (userId: number, newPassword: string, requirePasswordReset?: boolean) => {
+    const response = await api.put(`/admin/users/${userId}/password`, {
+      newPassword,
+      requirePasswordReset: requirePasswordReset !== undefined ? requirePasswordReset : true
+    });
     return response.data;
   },
   deleteUser: async (userId: number) => {

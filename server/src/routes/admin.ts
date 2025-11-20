@@ -1204,7 +1204,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response): Promise<
 // Create new user (Admin only)
 router.post('/users', requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, password, role } = req.body;
+    const { username, password, role, requirePasswordReset } = req.body;
 
     if (!username || !password || !role) {
       res.status(400).json({ error: 'Username, password, and role are required' });
@@ -1220,9 +1220,12 @@ router.post('/users', requireAdmin, async (req: Request, res: Response): Promise
     const { hashPassword } = await import('../utils/password');
     const passwordHash = await hashPassword(password);
 
+    // Default to requiring password reset if not specified
+    const firstLogin = requirePasswordReset !== undefined ? requirePasswordReset : true;
+
     const result = await pool.query(
-      'INSERT INTO users (username, password_hash, role, first_login) VALUES ($1, $2, $3, false) RETURNING id, username, role, first_login, created_at',
-      [username, passwordHash, role]
+      'INSERT INTO users (username, password_hash, role, first_login) VALUES ($1, $2, $3, $4) RETURNING id, username, role, first_login, created_at',
+      [username, passwordHash, role, firstLogin]
     );
 
     res.json(result.rows[0]);
@@ -1304,7 +1307,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response): P
 router.put('/users/:id/password', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword, requirePasswordReset } = req.body;
 
     if (!newPassword) {
       res.status(400).json({ error: 'New password is required' });
@@ -1333,10 +1336,15 @@ router.put('/users/:id/password', async (req: Request, res: Response): Promise<v
     const { hashPassword } = await import('../utils/password');
     const newPasswordHash = await hashPassword(newPassword);
 
-    // Update password and mark as not first login
+    // Determine first_login status based on requirePasswordReset parameter
+    // If requirePasswordReset is explicitly set, use that value
+    // Otherwise, default to false (user has completed password reset)
+    const firstLogin = requirePasswordReset !== undefined ? requirePasswordReset : false;
+
+    // Update password and first_login status
     await pool.query(
-      'UPDATE users SET password_hash = $1, first_login = false, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-      [newPasswordHash, id]
+      'UPDATE users SET password_hash = $1, first_login = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+      [newPasswordHash, firstLogin, id]
     );
 
     res.json({ message: 'Password changed successfully' });
