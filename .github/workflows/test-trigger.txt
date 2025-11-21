@@ -1,0 +1,2 @@
+This file is used to test the GitHub Actions workflow.
+It will be removed after testing.
