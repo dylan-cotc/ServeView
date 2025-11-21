@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, CheckCircle, AlertCircle, X, Check, Monitor, Settings } from 'lucide-react';
 import { adminAPI } from '../../services/api';
-import type { Location, ServiceType } from '../../types';
+import type { Location } from '../../types';
 
 interface Display {
   id: number;
@@ -18,12 +18,10 @@ interface Display {
 export default function Locations() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [displays, setDisplays] = useState<Display[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
   const [showDisplayForm, setShowDisplayForm] = useState(false);
-  const [editingDisplay, setEditingDisplay] = useState<Display | null>(null);
   const [selectedLocationForDisplay, setSelectedLocationForDisplay] = useState<Location | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -36,14 +34,6 @@ export default function Locations() {
     timezone: 'America/New_York',
   });
 
-  // Display form state
-  const [displayFormData, setDisplayFormData] = useState({
-    name: '',
-    slug: '',
-    serviceTypeId: '',
-    isPrimary: false,
-    maxPeople: 20,
-  });
 
   useEffect(() => {
     fetchData();
@@ -51,12 +41,24 @@ export default function Locations() {
 
   const fetchData = async () => {
     try {
-      const [locationsData, serviceTypesData] = await Promise.all([
-        adminAPI.getLocations(),
-        adminAPI.getServiceTypes(),
-      ]);
+      const locationsData = await adminAPI.getLocations();
       setLocations(locationsData);
-      setServiceTypes(serviceTypesData);
+      // For now, we'll get displays from the existing locations endpoint
+      // This will be updated when we implement the proper displays API
+      const displayData: Display[] = locationsData.flatMap((location: any) =>
+        location.pc_service_type_id ? [{
+          id: location.id,
+          location_id: location.id,
+          name: 'Main Display',
+          slug: `main-${location.slug}`,
+          pc_service_type_id: location.pc_service_type_id,
+          service_type_name: location.service_type_name,
+          is_primary: location.is_primary,
+          max_people: 20,
+          assignment_count: 0 // This will be populated from API later
+        }] : []
+      );
+      setDisplays(displayData);
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to load data' });
     } finally {

@@ -28,7 +28,6 @@ export default function DisplayManager() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [displays, setDisplays] = useState<Display[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
   useEffect(() => {
     fetchLocations();
@@ -50,7 +49,7 @@ export default function DisplayManager() {
       // This will be updated when we implement the proper displays API
       const data = await adminAPI.getLocations();
       // Transform locations to displays for now
-      const displayData: Display[] = data.flatMap(location =>
+      const displayData: Display[] = data.flatMap((location: any) =>
         location.pc_service_type_id ? [{
           id: location.id,
           location_id: location.id,
