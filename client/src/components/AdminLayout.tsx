@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { LocationProvider } from '../contexts/LocationContext';
 import LocationSelector from './LocationSelector';
 import ForcePasswordReset from './ForcePasswordReset';
-import { LayoutDashboard, Settings, Users, UserCircle, Mic, LogOut, ListMusic, MapPin, Shield } from 'lucide-react';
+import { LayoutDashboard, Settings, Users, UserCircle, Mic, LogOut, ListMusic, Monitor, Shield } from 'lucide-react';
 import ServeViewLogo from '../assets/ServeViewLogo.png';
 
 export default function AdminLayout() {
@@ -20,7 +20,7 @@ export default function AdminLayout() {
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/users', icon: Shield, label: 'Users' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
-    { path: '/admin/locations', icon: MapPin, label: 'Locations' },
+    { path: '/admin/display-manager', icon: Monitor, label: 'Display Manager' },
     { path: '/admin/positions', icon: UserCircle, label: 'Positions' },
     { path: '/admin/people', icon: Users, label: 'People' },
     { path: '/admin/microphones', icon: Mic, label: 'Microphones' },

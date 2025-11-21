@@ -11,6 +11,7 @@ import People from './pages/admin/People';
 import Microphones from './pages/admin/Microphones';
 import Setlist from './pages/admin/Setlist';
 import Locations from './pages/admin/Locations';
+import DisplayManager from './pages/admin/DisplayManager';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="microphones" element={<Microphones />} />
           <Route path="setlist" element={<Setlist />} />
           <Route path="locations" element={<Locations />} />
+          <Route path="display-manager" element={<DisplayManager />} />
         </Route>
 
         {/* Fallback */}
