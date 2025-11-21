@@ -41,7 +41,7 @@ A comprehensive church display management system built with modern web technolog
 - At least 2GB RAM available
 - Ports 5000 and 5432 available
 
-### Run with Docker Compose
+### Production Deployment
 
 1. **Clone the repository**
    ```bash
@@ -51,7 +51,7 @@ A comprehensive church display management system built with modern web technolog
 
 2. **Start the application**
    ```bash
-   docker-compose up --build
+   docker-compose up -d
    ```
 
 3. **Access the application**
@@ -63,6 +63,33 @@ A comprehensive church display management system built with modern web technolog
    - **Username**: `admin`
    - **Password**: `password`
    - ⚠️ **Change the password immediately after first login!**
+
+### Development Workflow
+
+1. **Use the development branch**
+   ```bash
+   git checkout development
+   # Make your changes
+   git commit -m "Your changes"
+   git push origin development
+   ```
+
+2. **GitHub Actions automatically builds and pushes**
+   - Pushes to `development` branch → `dylancotc/micboard:development` tag
+   - Pushes to `main` branch → `dylancotc/micboard:latest` tag
+
+3. **Test locally with development image**
+   ```bash
+   docker-compose -f docker-compose.dev.yml up -d
+   ```
+
+4. **When ready, merge to main**
+   ```bash
+   git checkout main
+   git merge development
+   git push origin main
+   ```
+   This automatically updates the `latest` tag on Docker Hub
 
 ## 🐳 Docker Configuration
 
@@ -169,10 +196,22 @@ docker-compose up --build
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch from `development`
 3. Make your changes
-4. Test with Docker: `docker-compose up --build`
-5. Submit a pull request
+4. Test locally with development image
+5. Push to your fork's development branch
+6. Submit a pull request to the `development` branch
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for automated Docker image builds:
+
+- **Development Branch** → Builds and pushes `dylancotc/micboard:development`
+- **Main Branch** → Builds and pushes `dylancotc/micboard:latest`
+
+**Required GitHub Secrets:**
+- `DOCKERHUB_USERNAME` - Your Docker Hub username
+- `DOCKERHUB_TOKEN` - Docker Hub access token (create at https://hub.docker.com/settings/security)
 
 ## 📄 License
 

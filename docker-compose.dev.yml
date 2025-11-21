@@ -1,0 +1,28 @@
+services:
+  app:
+    image: dylancotc/micboard:development
+    container_name: micboard-app-dev
+    ports:
+      - "5001:5000"
+    volumes:
+      - uploads_data:/app/uploads
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@localhost:5432/micboard
+      - JWT_SECRET=032ed9bcbe8cad582dfb40b18d3dec38a927b0fbee1af489e154892a89d26842
+      - PORT=5000
+      - UPLOAD_DIR=uploads/photos
+      - NODE_ENV=development
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: unless-stopped
+    networks:
+      - proxynet
+
+volumes:
+  postgres_data:
+  uploads_data:
+
+networks:
+  proxynet:
+    external: true
