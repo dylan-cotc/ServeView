@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import { LogIn, AlertCircle } from 'lucide-react';
+import ServeViewLogo from '../assets/ServeViewLogo.png';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -30,11 +31,18 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-500/20 via-primary-600/30 to-primary-700/40 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-2xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-6">
+              <img
+                src={ServeViewLogo}
+                alt="ServeView Logo"
+                className="h-16 w-auto"
+              />
+            </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">ServeView Admin</h1>
             <p className="text-gray-600">Sign in to manage your display</p>
           </div>

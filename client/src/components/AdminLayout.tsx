@@ -4,6 +4,7 @@ import { LocationProvider } from '../contexts/LocationContext';
 import LocationSelector from './LocationSelector';
 import ForcePasswordReset from './ForcePasswordReset';
 import { LayoutDashboard, Settings, Users, UserCircle, Mic, LogOut, ListMusic, MapPin, Shield } from 'lucide-react';
+import ServeViewLogo from '../assets/ServeViewLogo.png';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
@@ -42,8 +43,15 @@ export default function AdminLayout() {
         {/* Sidebar */}
         <div className="w-64 bg-white shadow-lg">
           <div className="p-6 border-b">
-            <h1 className="text-2xl font-bold text-primary">ServeView</h1>
-            <p className="text-sm text-gray-600 mt-1">Admin Panel</p>
+            <div className="flex items-center gap-3 mb-3">
+              <img
+                src={ServeViewLogo}
+                alt="ServeView Logo"
+                className="h-8 w-auto"
+              />
+              <h1 className="text-2xl font-bold text-primary">ServeView</h1>
+            </div>
+            <p className="text-sm text-gray-600">Admin Panel</p>
           </div>
 
           <nav className="p-4 space-y-2">

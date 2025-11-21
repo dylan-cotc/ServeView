@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
-import { Save, AlertCircle, CheckCircle, Upload, Trash2, Moon, Sun, Link as LinkIcon, Unlink, RefreshCw } from 'lucide-react';
+import { Save, AlertCircle, Upload, Trash2, Moon, Sun } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { useLocation } from '../../contexts/LocationContext';
 import type { Settings as SettingsType } from '../../types';
@@ -9,8 +9,7 @@ export default function Settings() {
   const { selectedLocation } = useLocation();
   const [settings, setSettings] = useState<SettingsType>({
     church_name: '',
-    pc_oauth_client_id: '',
-    pc_oauth_client_secret: '',
+    pc_personal_access_token: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,31 +23,24 @@ export default function Settings() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
-  // OAuth state
-  const [oauthConnected, setOauthConnected] = useState(false);
-  const [oauthExpired, setOauthExpired] = useState(false);
-  const [oauthExpiresAt, setOauthExpiresAt] = useState<string | null>(null);
-  const [checkingOAuth, setCheckingOAuth] = useState(false);
 
   useEffect(() => {
     fetchSettings();
     fetchLogo();
-    checkOAuthStatus();
   }, [selectedLocation]);
 
   useEffect(() => {
-    // Check for OAuth callback results in URL
+    // Check for any URL parameters that might indicate success/error states
     const params = new URLSearchParams(window.location.search);
-    const oauthSuccess = params.get('oauth_success');
-    const oauthError = params.get('oauth_error');
+    const success = params.get('success');
+    const error = params.get('error');
 
-    if (oauthSuccess) {
-      setMessage({ type: 'success', text: 'Successfully connected to Planning Center!' });
-      checkOAuthStatus();
+    if (success) {
+      setMessage({ type: 'success', text: success });
       // Clean up URL
       window.history.replaceState({}, '', '/admin/settings');
-    } else if (oauthError) {
-      setMessage({ type: 'error', text: `OAuth Error: ${oauthError}` });
+    } else if (error) {
+      setMessage({ type: 'error', text: error });
       // Clean up URL
       window.history.replaceState({}, '', '/admin/settings');
     }
@@ -174,55 +166,6 @@ export default function Settings() {
     }
   };
 
-  const checkOAuthStatus = async () => {
-    setCheckingOAuth(true);
-    try {
-      const status = await adminAPI.getPCOAuthStatus();
-      setOauthConnected(status.connected);
-      setOauthExpired(status.expired || false);
-      setOauthExpiresAt(status.expiresAt || null);
-    } catch (error) {
-      console.error('Failed to check OAuth status:', error);
-    } finally {
-      setCheckingOAuth(false);
-    }
-  };
-
-  const handleConnectOAuth = async () => {
-    try {
-      const { authUrl } = await adminAPI.getPCAuthUrl();
-      // Open OAuth authorization in same window
-      window.location.href = authUrl;
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to initiate OAuth connection' });
-    }
-  };
-
-  const handleDisconnectOAuth = async () => {
-    if (!confirm('Are you sure you want to disconnect from Planning Center? You will need to reconnect to sync data.')) {
-      return;
-    }
-
-    try {
-      await adminAPI.disconnectPCOAuth();
-      setOauthConnected(false);
-      setOauthExpired(false);
-      setOauthExpiresAt(null);
-      setMessage({ type: 'success', text: 'Disconnected from Planning Center' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to disconnect from Planning Center' });
-    }
-  };
-
-  const handleRefreshOAuth = async () => {
-    try {
-      await adminAPI.refreshPCOAuth();
-      await checkOAuthStatus();
-      setMessage({ type: 'success', text: 'OAuth token refreshed successfully' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to refresh OAuth token' });
-    }
-  };
 
   if (loading) {
     return (
@@ -434,143 +377,50 @@ export default function Settings() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Planning Center Integration</h2>
           <p className="text-sm text-gray-600 mb-4">
-            Connect to Planning Center using OAuth for secure access to your service data.
+            Connect to Planning Center using a Personal Access Token for secure access to your service data.
           </p>
 
-          {/* OAuth Setup Instructions */}
+          {/* Personal Access Token Setup Instructions */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <h3 className="text-sm font-semibold text-blue-900 mb-2">📋 OAuth Application Setup</h3>
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">🔑 Personal Access Token Setup</h3>
             <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
               <li>
-                Create an OAuth application at{' '}
+                Go to your{' '}
                 <a
-                  href="https://api.planningcenteronline.com/oauth/applications"
+                  href="https://api.planningcenteronline.com/personal_access_tokens"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline font-medium"
                 >
-                  Planning Center Developer Portal
+                  Planning Center Personal Access Tokens page
                 </a>
               </li>
-              <li>
-                Use this <strong>Authorization callback URL</strong>:
-                <div className="mt-1 p-2 bg-white border border-blue-300 rounded font-mono text-xs break-all select-all">
-                  {window.location.origin}/api/oauth/planning-center/callback
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/api/oauth/planning-center/callback`);
-                    setMessage({ type: 'success', text: 'Callback URL copied to clipboard!' });
-                  }}
-                  className="mt-1 text-xs text-primary hover:underline"
-                >
-                  📋 Click to copy
-                </button>
-              </li>
-              <li>Copy the <strong>Client ID</strong> and <strong>Secret</strong> from Planning Center and paste them below</li>
-              <li>Click <strong>Save Settings</strong> below</li>
-              <li>Then click <strong>Connect to Planning Center</strong> to authorize</li>
+              <li>Click <strong>"Create a new Personal Access Token"</strong></li>
+              <li>Give it a descriptive name (e.g., "ServeView Integration")</li>
+              <li>Select the appropriate scopes: <strong>services</strong> and <strong>people</strong></li>
+              <li>Click <strong>"Create Personal Access Token"</strong></li>
+              <li><strong>Copy the token immediately</strong> - you won't be able to see it again!</li>
+              <li>Paste the token below and click <strong>Save Settings</strong></li>
             </ol>
           </div>
 
-          {/* OAuth Connection Status */}
-          {oauthConnected && (
-            <div className={`mb-4 p-4 rounded-lg border ${
-              oauthExpired
-                ? 'bg-yellow-50 border-yellow-200'
-                : 'bg-green-50 border-green-200'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className={`w-5 h-5 ${oauthExpired ? 'text-yellow-600' : 'text-green-600'}`} />
-                  <div>
-                    <p className={`text-sm font-medium ${oauthExpired ? 'text-yellow-800' : 'text-green-800'}`}>
-                      {oauthExpired ? 'OAuth Token Expired' : 'Connected to Planning Center'}
-                    </p>
-                    {oauthExpiresAt && (
-                      <p className="text-xs text-gray-600 mt-1">
-                        {oauthExpired ? 'Expired' : 'Expires'}: {new Date(oauthExpiresAt).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {oauthExpired && (
-                    <button
-                      type="button"
-                      onClick={handleRefreshOAuth}
-                      className="flex items-center gap-2 px-3 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      Refresh
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleDisconnectOAuth}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    <Unlink className="w-4 h-4" />
-                    Disconnect
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="space-y-4">
             <div>
-              <label htmlFor="pc_app_id" className="block text-sm font-medium text-gray-700 mb-2">
-                OAuth Client ID
-              </label>
-              <input
-                type="text"
-                id="pc_app_id"
-                value={settings.pc_oauth_client_id}
-                onChange={(e) => handleChange('pc_oauth_client_id', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Enter Planning Center OAuth Client ID"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                From your OAuth application settings in Planning Center
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="pc_secret" className="block text-sm font-medium text-gray-700 mb-2">
-                OAuth Client Secret
+              <label htmlFor="pc_token" className="block text-sm font-medium text-gray-700 mb-2">
+                Personal Access Token
               </label>
               <input
                 type="password"
-                id="pc_secret"
-                value={settings.pc_oauth_client_secret}
-                onChange={(e) => handleChange('pc_oauth_client_secret', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Enter Planning Center OAuth Client Secret"
+                id="pc_token"
+                value={settings.pc_personal_access_token}
+                onChange={(e) => handleChange('pc_personal_access_token', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono"
+                placeholder="Enter your Planning Center Personal Access Token"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Keep this secret secure - it's used to authenticate your application
+                Keep this token secure - it's used to authenticate with Planning Center API
               </p>
             </div>
-
-            {/* OAuth Connect Button */}
-            {!oauthConnected && settings.pc_oauth_client_id && settings.pc_oauth_client_secret && (
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleConnectOAuth}
-                  disabled={checkingOAuth}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <LinkIcon className="w-4 h-4" />
-                  {checkingOAuth ? 'Checking...' : 'Connect to Planning Center'}
-                </button>
-                <p className="text-xs text-gray-500 mt-2">
-                  Save your OAuth credentials above first, then click to authorize access
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
