@@ -227,6 +227,26 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Displays
+  getDisplays: async (locationId?: number) => {
+    const response = await api.get('/admin/displays', {
+      params: locationId ? { location_id: locationId } : undefined
+    });
+    return response.data;
+  },
+  createDisplay: async (displayData: { location_id: number; name: string; slug: string; pc_service_type_id?: string; max_people?: number; is_primary?: boolean }) => {
+    const response = await api.post('/admin/displays', displayData);
+    return response.data;
+  },
+  updateDisplay: async (displayId: number, displayData: { name?: string; slug?: string; pc_service_type_id?: string; max_people?: number; is_primary?: boolean; is_active?: boolean }) => {
+    const response = await api.put(`/admin/displays/${displayId}`, displayData);
+    return response.data;
+  },
+  deleteDisplay: async (displayId: number) => {
+    const response = await api.delete(`/admin/displays/${displayId}`);
+    return response.data;
+  },
+
   // Users
   getUsers: async () => {
     const response = await api.get('/admin/users');

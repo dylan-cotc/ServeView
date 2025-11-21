@@ -1186,6 +1186,162 @@ router.put('/setlist/visibility', async (req: Request, res: Response): Promise<v
   }
 });
 
+// ========== Displays ==========
+
+// Get all displays (filtered by location if provided)
+router.get('/displays', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { location_id } = req.query;
+
+    let query = `
+      SELECT d.*,
+        l.display_name as location_name,
+        COUNT(p.id) as assignment_count
+      FROM displays d
+      LEFT JOIN locations l ON d.location_id = l.id
+      LEFT JOIN people p ON p.location_id = d.location_id
+      WHERE d.is_active = true
+    `;
+    const params: any[] = [];
+
+    if (location_id) {
+      query += ' AND d.location_id = $1';
+      params.push(location_id);
+    }
+
+    query += ' GROUP BY d.id, l.display_name ORDER BY d.location_id, d.name';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get displays error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create new display
+router.post('/displays', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { location_id, name, slug, pc_service_type_id, max_people, is_primary } = req.body;
+
+    if (!location_id || !name || !slug) {
+      res.status(400).json({ error: 'location_id, name, and slug are required' });
+      return;
+    }
+
+    // Validate slug format (alphanumeric and hyphens only)
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      res.status(400).json({ error: 'Slug must contain only lowercase letters, numbers, and hyphens' });
+      return;
+    }
+
+    // If setting this as primary, unset any existing primary display for this location
+    if (is_primary) {
+      await pool.query('UPDATE displays SET is_primary = false WHERE location_id = $1', [location_id]);
+    }
+
+    const result = await pool.query(
+      `INSERT INTO displays (location_id, name, slug, pc_service_type_id, max_people, is_primary, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, true)
+       RETURNING *`,
+      [location_id, name, slug, pc_service_type_id || null, max_people || 20, is_primary || false]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Create display error:', error);
+    if (error.code === '23505') { // Unique violation
+      res.status(409).json({ error: 'A display with this slug already exists' });
+    } else {
+      res.status(500).json({ error: 'Failed to create display' });
+    }
+  }
+});
+
+// Update display
+router.put('/displays/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { name, slug, pc_service_type_id, max_people, is_primary, is_active } = req.body;
+
+    // Validate slug format if provided
+    if (slug && !/^[a-z0-9-]+$/.test(slug)) {
+      res.status(400).json({ error: 'Slug must contain only lowercase letters, numbers, and hyphens' });
+      return;
+    }
+
+    // If setting this as primary, unset any existing primary display for this location
+    if (is_primary) {
+      // Get the location_id first
+      const displayResult = await pool.query('SELECT location_id FROM displays WHERE id = $1', [id]);
+      if (displayResult.rows.length === 0) {
+        res.status(404).json({ error: 'Display not found' });
+        return;
+      }
+      await pool.query('UPDATE displays SET is_primary = false WHERE location_id = $1 AND id != $2',
+        [displayResult.rows[0].location_id, id]);
+    }
+
+    const result = await pool.query(
+      `UPDATE displays
+       SET name = COALESCE($1, name),
+           slug = COALESCE($2, slug),
+           pc_service_type_id = $3,
+           max_people = COALESCE($4, max_people),
+           is_primary = COALESCE($5, is_primary),
+           is_active = COALESCE($6, is_active),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7
+       RETURNING *`,
+      [name, slug, pc_service_type_id || null, max_people, is_primary, is_active, id]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Display not found' });
+      return;
+    }
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Update display error:', error);
+    if (error.code === '23505') { // Unique violation
+      res.status(409).json({ error: 'A display with this slug already exists' });
+    } else {
+      res.status(500).json({ error: 'Failed to update display' });
+    }
+  }
+});
+
+// Delete display
+router.delete('/displays/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Check if this is the primary display
+    const display = await pool.query('SELECT is_primary, location_id FROM displays WHERE id = $1', [id]);
+    if (display.rows.length === 0) {
+      res.status(404).json({ error: 'Display not found' });
+      return;
+    }
+
+    // Prevent deletion of primary display if other displays exist for this location
+    const displayCount = await pool.query('SELECT COUNT(*) as count FROM displays WHERE location_id = $1 AND is_active = true',
+      [display.rows[0].location_id]);
+    if (display.rows[0].is_primary && parseInt(displayCount.rows[0].count) > 1) {
+      res.status(400).json({ error: 'Cannot delete primary display while other displays exist for this location. Set another display as primary first.' });
+      return;
+    }
+
+    // Soft delete by setting is_active to false
+    await pool.query('UPDATE displays SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1', [id]);
+
+    res.json({ message: 'Display deleted successfully' });
+  } catch (error) {
+    console.error('Delete display error:', error);
+    res.status(500).json({ error: 'Failed to delete display' });
+  }
+});
+
 // ========== User Management ==========
 
 // Get all users (Admin only)
