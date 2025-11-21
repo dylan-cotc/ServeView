@@ -858,10 +858,10 @@ router.delete(
 router.get('/locations', async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query(`
-      SELECT id, pc_location_id, name, slug, display_name, is_primary, pc_service_type_id,
-             service_type_name, sync_enabled, pc_folder_id, folder_name, created_at, updated_at
+      SELECT id, pc_location_id, name, slug, display_name, is_primary,
+             sync_enabled, timezone, created_at, updated_at
       FROM locations
-      ORDER BY folder_name NULLS LAST, name
+      ORDER BY name
     `);
     res.json(result.rows);
   } catch (error) {
@@ -930,35 +930,17 @@ router.put('/locations/:id', async (req: Request, res: Response): Promise<void> 
       await pool.query('UPDATE locations SET is_primary = false WHERE id != $1', [id]);
     }
 
-    // If pc_service_type_id is provided, get the service type name from Planning Center
-    let serviceTypeName = null;
-    if (pc_service_type_id) {
-      try {
-        await planningCenterService.initialize();
-        const serviceTypes = await planningCenterService.getAllServiceTypes();
-        const serviceType = serviceTypes.find((st: any) => st.id === pc_service_type_id);
-        if (serviceType) {
-          serviceTypeName = serviceType.attributes.name;
-        }
-      } catch (error) {
-        console.error('Failed to fetch service type name:', error);
-        // Continue with update even if we can't fetch the name
-      }
-    }
-
     const result = await pool.query(
       `UPDATE locations
        SET name = COALESCE($1, name),
            slug = COALESCE($2, slug),
            display_name = COALESCE($3, display_name),
            is_primary = COALESCE($4, is_primary),
-           pc_service_type_id = $5,
-           service_type_name = $6,
-           timezone = $7,
+           timezone = COALESCE($5, timezone),
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $8
+       WHERE id = $6
        RETURNING *`,
-      [name, slug, display_name, is_primary, pc_service_type_id || null, serviceTypeName, timezone || 'America/New_York', id]
+      [name, slug, display_name, is_primary, timezone || 'America/New_York', id]
     );
 
     console.log('Updated location with timezone:', timezone);

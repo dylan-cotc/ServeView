@@ -9,27 +9,38 @@ router.get('/data', async (req: Request, res: Response): Promise<void> => {
   try {
     const { slug } = req.query;
 
-    // Get location by slug, or get primary location if no slug provided
-    let locationQuery;
-    let locationParams: any[];
+    // Get display by slug, or get primary display if no slug provided
+    let displayQuery;
+    let displayParams: any[];
 
     if (slug) {
-      locationQuery = 'SELECT id, name, display_name, pc_service_type_id, timezone FROM locations WHERE slug = $1';
-      locationParams = [slug];
+      displayQuery = `
+        SELECT d.*, l.name as location_name, l.display_name as location_display_name, l.timezone
+        FROM displays d
+        JOIN locations l ON d.location_id = l.id
+        WHERE d.slug = $1 AND d.is_active = true
+      `;
+      displayParams = [slug];
     } else {
-      locationQuery = 'SELECT id, name, display_name, pc_service_type_id, timezone FROM locations WHERE is_primary = true LIMIT 1';
-      locationParams = [];
+      displayQuery = `
+        SELECT d.*, l.name as location_name, l.display_name as location_display_name, l.timezone
+        FROM displays d
+        JOIN locations l ON d.location_id = l.id
+        WHERE d.is_primary = true AND d.is_active = true
+        LIMIT 1
+      `;
+      displayParams = [];
     }
 
-    const locationResult = await pool.query(locationQuery, locationParams);
+    const displayResult = await pool.query(displayQuery, displayParams);
 
-    if (locationResult.rows.length === 0) {
-      res.status(404).json({ error: 'Location not found' });
+    if (displayResult.rows.length === 0) {
+      res.status(404).json({ error: 'Display not found' });
       return;
     }
 
-    const location = locationResult.rows[0];
-    const locationId = location.id;
+    const display = displayResult.rows[0];
+    const locationId = display.location_id;
 
     // Get church settings
     let settings: any = { church_name: 'Church' };
@@ -137,12 +148,12 @@ router.get('/data', async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // Get Planning Center setlist if available for this location
+    // Get Planning Center setlist if available for this display
     let setlist = null;
     try {
-      if (location.pc_service_type_id) {
+      if (display.pc_service_type_id) {
         await planningCenterService.initialize();
-        const nextPlan = await planningCenterService.getNextPlan(location.pc_service_type_id);
+        const nextPlan = await planningCenterService.getNextPlan(display.pc_service_type_id);
 
         if (nextPlan) {
           const items = await planningCenterService.getPlanItems(
@@ -192,7 +203,7 @@ router.get('/data', async (req: Request, res: Response): Promise<void> => {
 
     res.json({
       churchName: settings.church_name || 'Church',
-      locationName: location.display_name || location.name,
+      locationName: display.location_display_name || display.location_name,
       date: nextSunday.toISOString().split('T')[0],
       people: people,
       displayItems,
@@ -202,7 +213,7 @@ router.get('/data', async (req: Request, res: Response): Promise<void> => {
         position: displaySettings.logo_position || 'left',
         display_mode: displaySettings.logo_display_mode || 'both',
       },
-      timezone: location.timezone || 'America/New_York',
+      timezone: display.timezone || 'America/New_York',
       dark_mode: displaySettings.dark_mode === 'true',
     });
   } catch (error) {
