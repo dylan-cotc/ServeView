@@ -9,7 +9,8 @@ export default function Settings() {
   const { selectedLocation } = useLocation();
   const [settings, setSettings] = useState<SettingsType>({
     church_name: '',
-    pc_personal_access_token: '',
+    pc_client_id: '',
+    pc_client_secret: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -385,8 +386,8 @@ export default function Settings() {
             <h3 className="text-sm font-semibold text-blue-900 mb-2">🔑 Personal Access Token Setup</h3>
             <div className="text-sm text-blue-800 mb-3">
               <p className="mb-2">
-                Personal Access Tokens provide secure API access without requiring OAuth app registration.
-                Follow these steps to create and configure your token:
+                Personal Access Tokens provide secure API access using your Application ID and Secret.
+                Follow these steps to create and configure your credentials:
               </p>
             </div>
             <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
@@ -415,31 +416,48 @@ export default function Settings() {
               </li>
               <li>Click <strong>"Create Personal Access Token"</strong></li>
               <li>
-                <strong className="text-red-700">⚠️ CRITICAL:</strong> Copy the token immediately - it will only be shown once and cannot be retrieved later
+                <strong className="text-red-700">⚠️ CRITICAL:</strong> Copy both the <strong>Application ID</strong> and <strong>Secret</strong> immediately - they will only be shown once and cannot be retrieved later
               </li>
-              <li>Paste the token in the field below and click <strong>"Save Settings"</strong></li>
+              <li>Paste the Application ID and Secret in the fields below and click <strong>"Save Settings"</strong></li>
             </ol>
             <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-              <strong>Security Note:</strong> Keep your Personal Access Token secure. It provides access to your church's Planning Center data.
-              If compromised, revoke it immediately from your Planning Center account.
+              <strong>Security Note:</strong> Keep your Application ID and Secret secure. They provide access to your church's Planning Center data.
+              If compromised, revoke the token immediately from your Planning Center account.
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="pc_token" className="block text-sm font-medium text-gray-700 mb-2">
-                Personal Access Token
+              <label htmlFor="pc_client_id" className="block text-sm font-medium text-gray-700 mb-2">
+                Application ID (Client ID)
+              </label>
+              <input
+                type="text"
+                id="pc_client_id"
+                value={settings.pc_client_id}
+                onChange={(e) => handleChange('pc_client_id', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono"
+                placeholder="Enter your Planning Center Application ID"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                From your Personal Access Token - used as username for API authentication
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="pc_client_secret" className="block text-sm font-medium text-gray-700 mb-2">
+                Secret
               </label>
               <input
                 type="password"
-                id="pc_token"
-                value={settings.pc_personal_access_token}
-                onChange={(e) => handleChange('pc_personal_access_token', e.target.value)}
+                id="pc_client_secret"
+                value={settings.pc_client_secret}
+                onChange={(e) => handleChange('pc_client_secret', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono"
-                placeholder="Enter your Planning Center Personal Access Token"
+                placeholder="Enter your Planning Center Secret"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Keep this token secure - it's used to authenticate with Planning Center API
+                From your Personal Access Token - used as password for API authentication
               </p>
             </div>
           </div>

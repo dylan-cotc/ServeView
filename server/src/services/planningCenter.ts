@@ -59,28 +59,35 @@ export interface PCItem {
 class PlanningCenterService {
   private client: AxiosInstance | null = null;
 
-  async initialize(personalAccessToken?: string): Promise<void> {
-    // Use Personal Access Token for authentication
-    let pcToken = personalAccessToken;
+  async initialize(clientId?: string, clientSecret?: string): Promise<void> {
+    // Use Personal Access Token credentials for authentication
+    let pcClientId = clientId;
+    let pcClientSecret = clientSecret;
 
-    if (!pcToken) {
+    if (!pcClientId || !pcClientSecret) {
       const result = await pool.query(
-        "SELECT value FROM settings WHERE key = 'pc_personal_access_token' LIMIT 1"
+        "SELECT key, value FROM settings WHERE key IN ('pc_client_id', 'pc_client_secret')"
       );
 
-      pcToken = result.rows[0]?.value;
+      const settings = result.rows.reduce((acc: any, row: any) => {
+        acc[row.key] = row.value;
+        return acc;
+      }, {});
+
+      pcClientId = settings.pc_client_id;
+      pcClientSecret = settings.pc_client_secret;
     }
 
-    if (!pcToken) {
-      throw new Error('Planning Center Personal Access Token not configured. Please configure it in Settings.');
+    if (!pcClientId || !pcClientSecret) {
+      throw new Error('Planning Center Personal Access Token credentials not configured. Please configure Application ID and Secret in Settings.');
     }
 
-    // Use Personal Access Token with basic auth (token as password, empty username)
+    // Use Personal Access Token with basic auth (Application ID as username, Secret as password)
     this.client = axios.create({
       baseURL: PC_API_BASE,
       auth: {
-        username: '',
-        password: pcToken,
+        username: pcClientId,
+        password: pcClientSecret,
       },
       headers: {
         'Content-Type': 'application/json',

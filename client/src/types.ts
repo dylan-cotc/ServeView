@@ -96,7 +96,8 @@ export interface SetlistItem {
 
 export interface Settings {
   church_name: string;
-  pc_personal_access_token: string;
+  pc_client_id: string;
+  pc_client_secret: string;
 }
 
 export interface Location {
