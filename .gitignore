@@ -16,6 +16,9 @@ server/dist/
 .env.development
 server/.env
 
+# Auto-generated secrets
+.jwt_secret
+
 # IDE
 .vscode/
 .idea/
