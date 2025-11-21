@@ -20,13 +20,25 @@ start_postgres() {
     # Initialize database if not already done
     if [ ! -d "/var/lib/postgresql/data/base" ]; then
         echo "Initializing PostgreSQL database..."
-        sudo -u postgres /usr/lib/postgresql/15/bin/initdb -D /var/lib/postgresql/data
+        # Use C locale to avoid locale issues
+        sudo -u postgres /usr/lib/postgresql/15/bin/initdb -D /var/lib/postgresql/data --locale=C --encoding=UTF8
         
         # Configure PostgreSQL to listen on all interfaces
         echo "Configuring PostgreSQL..."
         echo "listen_addresses = '*'" >> /var/lib/postgresql/data/postgresql.conf
         echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/data/pg_hba.conf
         echo "host all all ::0/0 md5" >> /var/lib/postgresql/data/pg_hba.conf
+    else
+        # Fix locale issues in existing database
+        echo "Checking for locale configuration issues..."
+        if grep -q "lc_messages = 'en_US.utf8'" /var/lib/postgresql/data/postgresql.conf 2>/dev/null; then
+            echo "Fixing locale settings in postgresql.conf..."
+            sed -i "s/lc_messages = 'en_US.utf8'/lc_messages = 'C'/g" /var/lib/postgresql/data/postgresql.conf
+            sed -i "s/lc_monetary = 'en_US.utf8'/lc_monetary = 'C'/g" /var/lib/postgresql/data/postgresql.conf
+            sed -i "s/lc_numeric = 'en_US.utf8'/lc_numeric = 'C'/g" /var/lib/postgresql/data/postgresql.conf
+            sed -i "s/lc_time = 'en_US.utf8'/lc_time = 'C'/g" /var/lib/postgresql/data/postgresql.conf
+            echo "✓ Fixed locale settings"
+        fi
     fi
 
     # Start PostgreSQL
