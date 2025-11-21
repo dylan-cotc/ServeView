@@ -17,6 +17,12 @@ start_postgres() {
     chown -R postgres:postgres /var/lib/postgresql/data /var/run/postgresql
     chmod 700 /var/lib/postgresql/data
 
+    # Remove stale PID file if it exists
+    if [ -f /var/lib/postgresql/data/postmaster.pid ]; then
+        echo "Removing stale PID file..."
+        rm -f /var/lib/postgresql/data/postmaster.pid
+    fi
+
     # Initialize database if not already done
     if [ ! -d "/var/lib/postgresql/data/base" ]; then
         echo "Initializing PostgreSQL database..."
@@ -31,12 +37,18 @@ start_postgres() {
     else
         # Fix locale issues in existing database
         echo "Checking for locale configuration issues..."
-        if grep -q "lc_messages = 'en_US.utf8'" /var/lib/postgresql/data/postgresql.conf 2>/dev/null; then
+        if grep -q "en_US.utf8" /var/lib/postgresql/data/postgresql.conf 2>/dev/null; then
             echo "Fixing locale settings in postgresql.conf..."
+            # Fix all locale-related settings
             sed -i "s/lc_messages = 'en_US.utf8'/lc_messages = 'C'/g" /var/lib/postgresql/data/postgresql.conf
             sed -i "s/lc_monetary = 'en_US.utf8'/lc_monetary = 'C'/g" /var/lib/postgresql/data/postgresql.conf
             sed -i "s/lc_numeric = 'en_US.utf8'/lc_numeric = 'C'/g" /var/lib/postgresql/data/postgresql.conf
             sed -i "s/lc_time = 'en_US.utf8'/lc_time = 'C'/g" /var/lib/postgresql/data/postgresql.conf
+            # Also fix any without quotes
+            sed -i "s/lc_messages = en_US.utf8/lc_messages = 'C'/g" /var/lib/postgresql/data/postgresql.conf
+            sed -i "s/lc_monetary = en_US.utf8/lc_monetary = 'C'/g" /var/lib/postgresql/data/postgresql.conf
+            sed -i "s/lc_numeric = en_US.utf8/lc_numeric = 'C'/g" /var/lib/postgresql/data/postgresql.conf
+            sed -i "s/lc_time = en_US.utf8/lc_time = 'C'/g" /var/lib/postgresql/data/postgresql.conf
             echo "✓ Fixed locale settings"
         fi
     fi
